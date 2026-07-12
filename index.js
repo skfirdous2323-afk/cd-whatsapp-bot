@@ -147,6 +147,10 @@ if (buttonId === "gender_male") {
       // Confirm Button
 
 // Confirm Button
+
+const session = getSession(from);
+console.log(session);
+
 if (buttonId === "confirm_booking") {
   const session = getSession(from);
 
