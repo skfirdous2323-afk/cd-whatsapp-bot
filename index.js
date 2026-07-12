@@ -147,6 +147,10 @@ const timeName =
       } else if (buttonId === "confirm_booking") {
         const session = getSession(from);
 
+
+const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
+
+
         const { error } = await supabase
           .from("appointments")
           .insert([
