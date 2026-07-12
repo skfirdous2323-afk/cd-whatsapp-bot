@@ -81,6 +81,32 @@ app.post("/webhook", async (req, res) => {
 
       } else if (listId === "dr_rahul" || listId === "dr_priya") {
         const session = getSession(from);
+
+
+const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
+
+const doctorName =
+  session.doctor === "dr_rahul" ? "Dr. Rahul" : "Dr. Priya";
+
+const dateName =
+  session.date === "today"
+    ? "Today"
+    : session.date === "tomorrow"
+    ? "Tomorrow"
+    : "Day After Tomorrow";
+
+const timeName =
+  session.time === "time_9"
+    ? "09:00 AM"
+    : session.time === "time_10"
+    ? "10:00 AM"
+    : session.time === "time_11"
+    ? "11:00 AM"
+    : "02:00 PM";
+
+
+
+
         session.doctor = listId;
         await sendDateMenu(from);
 
@@ -146,14 +172,24 @@ app.post("/webhook", async (req, res) => {
               to: from,
               type: "text",
               text: {
-                body: `✅ Your appointment has been booked successfully!
 
+body: `✅ Your appointment has been booked successfully!
+
+🆔 Appointment ID: ${appointmentId}
 👤 Name: ${session.name}
-🩺 Doctor: ${session.doctor}
-📅 Date: ${session.date}
-🕒 Time: ${session.time}
+📞 Phone: +${from}
+🩺 Doctor: ${doctorName}
+📅 Date: ${dateName}
+🕒 Time: ${timeName}
 
 Thank you for choosing our clinic.`
+
+
+
+
+
+
+
               }
             },
             {
