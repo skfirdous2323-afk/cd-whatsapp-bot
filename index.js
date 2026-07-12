@@ -11,7 +11,7 @@ import { askPatientName } from "./menus/name.js";
 import { sendSummary } from "./menus/summary.js";
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
-
+import axios from "axios";
 const app = express();
 
 app.use(express.json());
@@ -39,6 +39,7 @@ app.get("/webhook", (req, res) => {
 });
 
 // Receive Messages
+
 app.post("/webhook", async (req, res) => {
   try {
     const message =
@@ -51,68 +52,48 @@ app.post("/webhook", async (req, res) => {
     const from = message.from;
 
     // TEXT MESSAGE
+    if (message.type === "text") {
+      const text = message.text.body.trim();
+      const session = getSession(from);
 
+      if (text.toLowerCase() === "hi" || text.toLowerCase() === "hello") {
+        clearSession(from);
+        await sendMainMenu(from);
 
+      } else if (!session.name) {
+        session.name = text;
+        await askPatientAge(from);
 
-if (message.type === "text") {
-  const text = message.text.body.trim();
-  const session = getSession(from);
-
-  if (text.toLowerCase() === "hi" || text.toLowerCase() === "hello") {
-    clearSession(from);
-    await sendMainMenu(from);
-  }
-
-  // Name
-  else if (!session.name) {
-    session.name = text;
-    await askPatientAge(from);
-  }
-
-  // Age
-  else if (!session.age) {
-    session.age = text;
-    await askPatientGender(from);
-  }
-}
+      } else if (!session.age) {
+        session.age = text;
+        await askPatientGender(from);
+      }
+    }
 
     // INTERACTIVE MESSAGE
     if (message.type === "interactive") {
-
       const listId = message.interactive.list_reply?.id;
       const buttonId = message.interactive.button_reply?.id;
 
-      // Book Appointment
       if (listId === "book") {
         clearSession(from);
         await sendDoctorMenu(from);
-      }
 
-      // Doctor
-      else if (
-        listId === "dr_rahul" ||
-        listId === "dr_priya"
-      ) {
+      } else if (listId === "dr_rahul" || listId === "dr_priya") {
         const session = getSession(from);
         session.doctor = listId;
-
         await sendDateMenu(from);
-      }
 
-      // Date
-      else if (
+      } else if (
         listId === "today" ||
         listId === "tomorrow" ||
         listId === "day_after"
       ) {
         const session = getSession(from);
         session.date = listId;
-
         await sendTimeMenu(from);
-      }
 
-      // Time
-      else if (
+      } else if (
         listId === "time_9" ||
         listId === "time_10" ||
         listId === "time_11" ||
@@ -120,73 +101,77 @@ if (message.type === "text") {
       ) {
         const session = getSession(from);
         session.time = listId;
-
         await askPatientName(from);
       }
 
+      if (buttonId === "gender_male") {
+        const session = getSession(from);
+        session.gender = "Male";
 
-if (buttonId === "gender_male") {
-  const session = getSession(from);
-  session.gender = "Male";
+        await sendSummary(from, session);
+        await sendConfirmMenu(from);
 
-  await sendSummary(from, session);
-  await sendConfirmMenu(from);
+      } else if (buttonId === "gender_female") {
+        const session = getSession(from);
+        session.gender = "Female";
 
-} else if (buttonId === "gender_female") {
-  const session = getSession(from);
-  session.gender = "Female";
+        await sendSummary(from, session);
+        await sendConfirmMenu(from);
 
-  await sendSummary(from, session);
-  await sendConfirmMenu(from);
-}
+      } else if (buttonId === "confirm_booking") {
+        const session = getSession(from);
 
+        const { error } = await supabase
+          .from("appointments")
+          .insert([
+            {
+              customer_name: session.name,
+              phone: from,
+              age: session.age,
+              gender: session.gender,
+              doctor: session.doctor,
+              appointment_date: session.date,
+              appointment_time: session.time,
+              status: "Pending",
+            },
+          ]);
 
+        if (error) {
+          console.log(error);
+        } else {
+          await axios.post(
+            `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
+            {
+              messaging_product: "whatsapp",
+              to: from,
+              type: "text",
+              text: {
+                body: `✅ Your appointment has been booked successfully!
 
+👤 Name: ${session.name}
+🩺 Doctor: ${session.doctor}
+📅 Date: ${session.date}
+🕒 Time: ${session.time}
 
+Thank you for choosing our clinic.`
+              }
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
+                "Content-Type": "application/json"
+              }
+            }
+          );
 
-      // Confirm Button
+          console.log("Appointment Saved");
+          clearSession(from);
+        }
 
-// Confirm Button
-
-const session = getSession(from);
-console.log(session);
-
-if (buttonId === "confirm_booking") {
-  const session = getSession(from);
-
-  const { error } = await supabase
-    .from("appointments")
-    .insert([
-      {
-        customer_name: session.name,
-        phone: from,
-        age: session.age,
-        gender: session.gender,
-        doctor: session.doctor,
-        appointment_date: session.date,
-        appointment_time: session.time,
-        status: "Pending",
-      },
-    ]);
-
-  if (error) {
-    console.log(error);
-  } else {
-    console.log("Appointment Saved");
-    clearSession(from);
-  }
-}
-
-// Cancel Button
-else if (buttonId === "cancel_booking") {
-  clearSession(from);
-  console.log("Appointment Cancelled");
-}
-
-
-
-
-
+      } else if (buttonId === "cancel_booking") {
+        clearSession(from);
+        console.log("Appointment Cancelled");
+      }
     }
 
     res.sendStatus(200);
@@ -196,6 +181,11 @@ else if (buttonId === "cancel_booking") {
     res.sendStatus(500);
   }
 });
+
+
+
+
+
 
 const PORT = process.env.PORT || 3000;
 
