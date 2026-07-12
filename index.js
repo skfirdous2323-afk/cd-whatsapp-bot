@@ -9,7 +9,7 @@ import { sendConfirmMenu } from "./menus/confirm.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
 import { sendSummary } from "./menus/summary.js";
-
+import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
 
 const app = express();
@@ -145,22 +145,44 @@ if (buttonId === "gender_male") {
 
 
       // Confirm Button
-      if (buttonId === "confirm_booking") {
 
-        const session = getSession(from);
+// Confirm Button
+if (buttonId === "confirm_booking") {
+  const session = getSession(from);
 
-        console.log("Appointment:", session);
+  const { error } = await supabase
+    .from("appointments")
+    .insert([
+      {
+        customer_name: session.name,
+        phone: from,
+        age: session.age,
+        gender: session.gender,
+        doctor: session.doctor,
+        appointment_date: session.date,
+        appointment_time: session.time,
+        status: "Pending",
+      },
+    ]);
 
-        clearSession(from);
-      }
+  if (error) {
+    console.log(error);
+  } else {
+    console.log("Appointment Saved");
+    clearSession(from);
+  }
+}
 
-      // Cancel Button
-      if (buttonId === "cancel_booking") {
+// Cancel Button
+else if (buttonId === "cancel_booking") {
+  clearSession(from);
+  console.log("Appointment Cancelled");
+}
 
-        clearSession(from);
 
-        console.log("Appointment Cancelled");
-      }
+
+
+
     }
 
     res.sendStatus(200);
