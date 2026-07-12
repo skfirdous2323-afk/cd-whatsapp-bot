@@ -1,17 +1,21 @@
 import express from "express";
+import axios from "axios";
 import "dotenv/config";
+
 import { askPatientAge } from "./menus/age.js";
+import { askPatientGender } from "./menus/gender.js";
+import { askPatientName } from "./menus/name.js";
+
 import { sendMainMenu } from "./menus/mainMenu.js";
 import { sendDoctorMenu } from "./menus/doctor.js";
 import { sendDateMenu } from "./menus/date.js";
 import { sendTimeMenu } from "./menus/time.js";
 import { sendConfirmMenu } from "./menus/confirm.js";
-import { askPatientGender } from "./menus/gender.js";
-import { askPatientName } from "./menus/name.js";
 import { sendSummary } from "./menus/summary.js";
+
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
-import axios from "axios";
+
 const app = express();
 
 app.use(express.json());
@@ -39,7 +43,6 @@ app.get("/webhook", (req, res) => {
 });
 
 // Receive Messages
-
 app.post("/webhook", async (req, res) => {
   try {
     const message =
@@ -56,7 +59,10 @@ app.post("/webhook", async (req, res) => {
       const text = message.text.body.trim();
       const session = getSession(from);
 
-      if (text.toLowerCase() === "hi" || text.toLowerCase() === "hello") {
+      if (
+        text.toLowerCase() === "hi" ||
+        text.toLowerCase() === "hello"
+      ) {
         clearSession(from);
         await sendMainMenu(from);
 
@@ -71,87 +77,79 @@ app.post("/webhook", async (req, res) => {
     }
 
     // INTERACTIVE MESSAGE
-    if (message.type === "interactive") {
+if (message.type === "interactive") {
       const listId = message.interactive.list_reply?.id;
       const buttonId = message.interactive.button_reply?.id;
+      const session = getSession(from);
 
+      // Book Appointment
       if (listId === "book") {
         clearSession(from);
         await sendDoctorMenu(from);
+      }
 
-      } else if (listId === "dr_rahul" || listId === "dr_priya") {
-        const session = getSession(from);
-
-
-const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
-
-const doctorName =
-  session.doctor === "dr_rahul" ? "Dr. Rahul" : "Dr. Priya";
-
-const dateName =
-  session.date === "today"
-    ? "Today"
-    : session.date === "tomorrow"
-    ? "Tomorrow"
-    : "Day After Tomorrow";
-
-const timeName =
-  session.time === "time_9"
-    ? "09:00 AM"
-    : session.time === "time_10"
-    ? "10:00 AM"
-    : session.time === "time_11"
-    ? "11:00 AM"
-    : "02:00 PM";
-
-
-
-
+      // Doctor
+      else if (listId === "dr_rahul" || listId === "dr_priya") {
         session.doctor = listId;
         await sendDateMenu(from);
+      }
 
-      } else if (
+      // Date
+      else if (
         listId === "today" ||
         listId === "tomorrow" ||
         listId === "day_after"
       ) {
-        const session = getSession(from);
         session.date = listId;
         await sendTimeMenu(from);
+      }
 
-      } else if (
+      // Time
+      else if (
         listId === "time_9" ||
         listId === "time_10" ||
         listId === "time_11" ||
         listId === "time_2"
       ) {
-        const session = getSession(from);
         session.time = listId;
         await askPatientName(from);
       }
 
+      // Gender
       if (buttonId === "gender_male") {
-        const session = getSession(from);
         session.gender = "Male";
-
         await sendSummary(from, session);
         await sendConfirmMenu(from);
 
       } else if (buttonId === "gender_female") {
-        const session = getSession(from);
         session.gender = "Female";
-
         await sendSummary(from, session);
         await sendConfirmMenu(from);
 
       } else if (buttonId === "confirm_booking") {
-        const session = getSession(from);
 
+        const doctorName =
+          session.doctor === "dr_rahul"
+            ? "Dr. Rahul Mehta"
+            : "Dr. Priya Sharma";
 
-const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
+        const dateName =
+          session.date === "today"
+            ? "Today"
+            : session.date === "tomorrow"
+            ? "Tomorrow"
+            : "Day After Tomorrow";
 
+        const timeMap = {
+          time_9: "09:00 AM",
+          time_10: "10:00 AM",
+          time_11: "11:00 AM",
+          time_2: "02:00 PM",
+        };
 
-        const { error } = await supabase
+        const timeName = timeMap[session.time];
+
+        const { data, error } = await supabase
           .from("appointments")
           .insert([
             {
@@ -159,16 +157,21 @@ const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
               phone: from,
               age: session.age,
               gender: session.gender,
-              doctor: session.doctor,
-              appointment_date: session.date,
-              appointment_time: session.time,
+              doctor: doctorName,
+              appointment_date: dateName,
+              appointment_time: timeName,
               status: "Pending",
             },
-          ]);
+          ])
+          .select()
+          .single();
 
         if (error) {
           console.log(error);
         } else {
+
+          const appointmentId = `APT-${1000 + data.id}`;
+
           await axios.post(
             `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
             {
@@ -176,8 +179,7 @@ const appointmentId = `APT-${Date.now().toString().slice(-4)}`;
               to: from,
               type: "text",
               text: {
-
-body: `✅ Your appointment has been booked successfully!
+                body: `✅ Your appointment has been booked successfully!
 
 🆔 Appointment ID: ${appointmentId}
 👤 Name: ${session.name}
@@ -186,14 +188,9 @@ body: `✅ Your appointment has been booked successfully!
 📅 Date: ${dateName}
 🕒 Time: ${timeName}
 
+Status: Pending
+
 Thank you for choosing our clinic.`
-
-
-
-
-
-
-
               }
             },
             {
@@ -213,22 +210,18 @@ Thank you for choosing our clinic.`
         console.log("Appointment Cancelled");
       }
     }
-
-    res.sendStatus(200);
+res.sendStatus(200);
 
   } catch (error) {
+    console.error("Webhook Error:");
     console.error(error.response?.data || error.message);
     res.sendStatus(500);
   }
 });
-
-
-
-
-
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server Running on Port ${PORT}`);
 });
+
