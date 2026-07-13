@@ -146,22 +146,59 @@ app.post("/webhook", async (req, res) => {
         const dateName = getDateName(session.date);
         const timeName = getTimeName(session.time);
 
-        const { data, error } = await supabase
-          .from("appointments")
-          .insert([
-            {
-              customer_name: session.name,
-              phone: from,
-              age: session.age,
-              gender: session.gender,
-              doctor: doctorName,
-              appointment_date: dateName,
-              appointment_time: timeName,
-              status: "Pending",
-            },
-          ])
-          .select()
-          .single();
+
+const { data: existingBooking } = await supabase
+  .from("appointments")
+  .select("id")
+  .eq("doctor", doctorName)
+  .eq("appointment_date", dateName)
+  .eq("appointment_time", timeName)
+  .maybeSingle();
+
+if (existingBooking) {
+  await sendTextMessage(
+    from,
+    `❌ Sorry!
+
+This time slot is already booked.
+
+🩺 Doctor: ${doctorName}
+📅 Date: ${dateName}
+🕒 Time: ${timeName}
+
+Please choose another date or time.`
+  );
+
+  return res.sendStatus(200);
+}
+
+const { data, error } = await supabase
+  .from("appointments")
+  .insert([
+    {
+      customer_name: session.name,
+      phone: from,
+      age: session.age,
+      gender: session.gender,
+      doctor: doctorName,
+      appointment_date: dateName,
+      appointment_time: timeName,
+      status: "Pending",
+    },
+  ])
+  .select()
+  .single();
+
+
+
+
+
+
+
+
+
+
+
 
         if (error) {
           console.log(error);
