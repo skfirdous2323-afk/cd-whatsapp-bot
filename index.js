@@ -221,6 +221,27 @@ Status: Pending
 Thank you for choosing our clinic.`
           );
 
+
+
+await sendTextMessage(
+  process.env.ADMIN_PHONE,
+  `🔔 New Appointment Received!
+
+🆔 Appointment ID: ${appointmentId}
+
+👤 Name: ${session.name}
+📞 Phone: +${from}
+🩺 Doctor: ${doctorName}
+📅 Date: ${dateName}
+🕒 Time: ${timeName}
+
+Status: Pending`
+);
+
+
+
+
+
           console.log("Appointment Saved");
           clearSession(from);
         }
