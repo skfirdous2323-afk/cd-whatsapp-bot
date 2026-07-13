@@ -238,55 +238,38 @@ getTimeName(session.time);
 
 // Check Slot
 
-const {
-data: existingBooking,
-error: checkError
+const { data: existingBooking, error: checkError } = await supabase
+  .from("appointments")
+  .select("id")
+  .eq("doctor", doctorName)
+  .eq("appointment_date", dateName)
+  .eq("appointment_time", timeName);
 
-}= await supabase
-.from("appointments")
-.select("id")
-.eq("doctor",doctorName)
-.eq("appointment_date",dateName)
-.eq("appointment_time",timeName)
-.maybeSingle();
+if (checkError) {
+  console.log(checkError);
 
+  await sendTextMessage(
+    from,
+    "❌ Unable to check slot. Please try again."
+  );
 
-
-if(checkError){
-
-console.log(checkError);
-
-await sendTextMessage(
-from,
-"❌ Unable to check slot. Please try again."
-);
-
-return;
-
+  return res.sendStatus(200);
 }
 
-
-
-if(existingBooking){
-
-
-await sendTextMessage(
-from,
-
-`❌ Slot Already Booked!
+if (existingBooking.length > 0) {
+  await sendTextMessage(
+    from,
+    `❌ Slot Already Booked!
 
 🩺 Doctor: ${doctorName}
 📅 Date: ${dateName}
 🕒 Time: ${timeName}
 
 Please choose another slot.`
-);
+  );
 
-
-return;
-
+  return res.sendStatus(200);
 }
-
 
 
 
