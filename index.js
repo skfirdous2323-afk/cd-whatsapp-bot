@@ -1,5 +1,4 @@
 import express from "express";
-import axios from "axios";
 import "dotenv/config";
 
 import { askPatientAge } from "./menus/age.js";
@@ -15,6 +14,14 @@ import { sendSummary } from "./menus/summary.js";
 
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
+
+import { sendTextMessage } from "./services/whatsapp.js";
+import {
+  getDoctorName,
+  getDateName,
+  getTimeName,
+} from "./utils/formatters.js";
+import { generateAppointmentId } from "./utils/appointmentId.js";
 
 const app = express();
 
@@ -77,12 +84,13 @@ app.post("/webhook", async (req, res) => {
     }
 
     // INTERACTIVE MESSAGE
-if (message.type === "interactive") {
+    if (message.type === "interactive") {
       const listId = message.interactive.list_reply?.id;
       const buttonId = message.interactive.button_reply?.id;
       const session = getSession(from);
 
-      // Book Appointment
+
+// Book Appointment
       if (listId === "book") {
         clearSession(from);
         await sendDoctorMenu(from);
@@ -128,26 +136,9 @@ if (message.type === "interactive") {
 
       } else if (buttonId === "confirm_booking") {
 
-        const doctorName =
-          session.doctor === "dr_rahul"
-            ? "Dr. Rahul Mehta"
-            : "Dr. Priya Sharma";
-
-        const dateName =
-          session.date === "today"
-            ? "Today"
-            : session.date === "tomorrow"
-            ? "Tomorrow"
-            : "Day After Tomorrow";
-
-        const timeMap = {
-          time_9: "09:00 AM",
-          time_10: "10:00 AM",
-          time_11: "11:00 AM",
-          time_2: "02:00 PM",
-        };
-
-        const timeName = timeMap[session.time];
+        const doctorName = getDoctorName(session.doctor);
+        const dateName = getDateName(session.date);
+        const timeName = getTimeName(session.time);
 
         const { data, error } = await supabase
           .from("appointments")
@@ -169,17 +160,11 @@ if (message.type === "interactive") {
         if (error) {
           console.log(error);
         } else {
+          const appointmentId = generateAppointmentId(data.id);
 
-          const appointmentId = `APT-${1000 + data.id}`;
-
-          await axios.post(
-            `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
-            {
-              messaging_product: "whatsapp",
-              to: from,
-              type: "text",
-              text: {
-                body: `✅ Your appointment has been booked successfully!
+          await sendTextMessage(
+            from,
+`✅ Your appointment has been booked successfully!
 
 🆔 Appointment ID: ${appointmentId}
 👤 Name: ${session.name}
@@ -191,14 +176,6 @@ if (message.type === "interactive") {
 Status: Pending
 
 Thank you for choosing our clinic.`
-              }
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
-                "Content-Type": "application/json"
-              }
-            }
           );
 
           console.log("Appointment Saved");
@@ -210,6 +187,8 @@ Thank you for choosing our clinic.`
         console.log("Appointment Cancelled");
       }
     }
+
+
 res.sendStatus(200);
 
   } catch (error) {
@@ -224,4 +203,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server Running on Port ${PORT}`);
 });
-
