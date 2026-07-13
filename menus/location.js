@@ -1,54 +1,20 @@
 import axios from "axios";
 
-export async function sendMainMenu(phone) {
+export async function sendLocation(phone) {
   await axios.post(
     `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
     {
       messaging_product: "whatsapp",
       to: phone,
-      type: "interactive",
-      interactive: {
-        type: "list",
-        header: {
-          type: "text",
-          text: "🏥 Welcome to SmileCare Clinic"
-        },
-        body: {
-          text: "Please choose an option:"
-        },
-        footer: {
-          text: "Clinic WhatsApp Bot"
-        },
-        action: {
-          button: "Menu",
-          sections: [
-            {
-              title: "Main Menu",
-              rows: [
-                {
-                  id: "book",
-                  title: "📅 Book Appointment"
-                },
-                {
-                  id: "doctors",
-                  title: "👨‍⚕️ Doctors"
-                },
-                {
-                  id: "services",
-                  title: "🩺 Services"
-                },
-                {
-                  id: "contact",
-                  title: "📞 Contact Us"
-                },
-                {
-                  id: "location",
-                  title: "📍 Clinic Location"
-                }
-              ]
-            }
-          ]
-        }
+      type: "text",
+      text: {
+        body: `📍 SmileCare Dental Clinic
+
+🏥 Address:
+123 Main Road, Ilambazar, Birbhum
+
+🗺️ Google Maps:
+https://maps.google.com/?q=23.6030,87.5380`
       }
     },
     {

@@ -4,7 +4,7 @@ import "dotenv/config";
 import { askPatientAge } from "./menus/age.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
-
+import { generateAppointmentSlip } from "./pdf/appointmentSlip.js";
 import { sendMainMenu } from "./menus/mainMenu.js";
 import { sendDoctorMenu } from "./menus/doctor.js";
 import { sendDateMenu } from "./menus/date.js";
@@ -201,17 +201,31 @@ const { data, error } = await supabase
 
 
 
-
-
-
-
-
-
-
         if (error) {
           console.log(error);
         } else {
           const appointmentId = generateAppointmentId(data.id);
+
+
+const pdfPath = await generateAppointmentSlip({
+  appointmentId,
+  name: session.name,
+  phone: `+${from}`,
+  doctor: doctorName,
+  date: dateName,
+  time: timeName,
+});
+
+console.log("PDF Created:", pdfPath);
+
+
+
+
+
+
+
+
+
 
           await sendTextMessage(
             from,
