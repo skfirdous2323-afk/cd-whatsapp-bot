@@ -14,8 +14,14 @@ import { sendSummary } from "./menus/summary.js";
 import { sendLocation } from "./menus/location.js";
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
+import {
+  sendTextMessage,
+  sendDocument,
+} from "./services/whatsapp.js";
 
-import { sendTextMessage } from "./services/whatsapp.js";
+
+
+
 import {
   getDoctorName,
   getDateName,
@@ -350,25 +356,23 @@ generateAppointmentId(data.id);
 
 
 // Create PDF
-
-
-await generateAppointmentSlip({
-
-appointmentId,
-
-name:session.name,
-
-phone:`+${from}`,
-
-doctor:doctorName,
-
-date:dateName,
-
-time:timeName
-
+const pdfPath = await generateAppointmentSlip({
+  appointmentId,
+  name: session.name,
+  phone: `+${from}`,
+  doctor: doctorName,
+  date: dateName,
+  time: timeName,
 });
 
+console.log("PDF Created:", pdfPath);
 
+
+await sendDocument(
+  from,
+  pdfPath,
+  `${appointmentId}.pdf`
+);
 
 
 // Customer Message
