@@ -90,222 +90,411 @@ app.post("/webhook", async (req, res) => {
     }
 
     // INTERACTIVE MESSAGE
-    if (message.type === "interactive") {
-      const listId = message.interactive.list_reply?.id;
-      const buttonId = message.interactive.button_reply?.id;
-      const session = getSession(from);
+// INTERACTIVE MESSAGE
+
+if(message.type === "interactive"){
+
+
+const listId =
+message.interactive?.list_reply?.id;
+
+
+const buttonId =
+message.interactive?.button_reply?.id;
+
 
 
 // Book Appointment
-      if (listId === "book") {
-        clearSession(from);
-        await sendDoctorMenu(from);
-      }
+
+if(listId === "book"){
+
+clearSession(from);
+
+await sendDoctorMenu(from);
+
+}
 
 
-else if (listId === "location") {
-  await sendLocation(from);
+// Location
+
+else if(listId === "location"){
+
+await sendLocation(from);
+
+}
+
+
+// Doctor Selection
+
+else if(
+listId === "dr_rahul" ||
+listId === "dr_priya"
+){
+
+session.doctor = listId;
+
+await sendDateMenu(from);
+
+}
+
+
+// Date Selection
+
+else if(
+listId === "today" ||
+listId === "tomorrow" ||
+listId === "day_after"
+){
+
+session.date = listId;
+
+await sendTimeMenu(from);
+
+}
+
+
+// Time Selection
+
+else if(
+listId === "time_9" ||
+listId === "time_10" ||
+listId === "time_11" ||
+listId === "time_2"
+){
+
+session.time = listId;
+
+await askPatientName(from);
+
+}
+
+
+
+// Gender Male
+
+else if(buttonId === "gender_male"){
+
+session.gender = "Male";
+
+
+await sendSummary(
+from,
+session
+);
+
+
+await sendConfirmMenu(from);
+
+}
+
+
+
+// Gender Female
+
+else if(buttonId === "gender_female"){
+
+session.gender = "Female";
+
+
+await sendSummary(
+from,
+session
+);
+
+
+await sendConfirmMenu(from);
+
 }
 
 
 
 
-      // Doctor
-      else if (listId === "dr_rahul" || listId === "dr_priya") {
-        session.doctor = listId;
-        await sendDateMenu(from);
-      }
+// Confirm Booking
 
-      // Date
-      else if (
-        listId === "today" ||
-        listId === "tomorrow" ||
-        listId === "day_after"
-      ) {
-        session.date = listId;
-        await sendTimeMenu(from);
-      }
-
-      // Time
-      else if (
-        listId === "time_9" ||
-        listId === "time_10" ||
-        listId === "time_11" ||
-        listId === "time_2"
-      ) {
-        session.time = listId;
-        await askPatientName(from);
-      }
-
-      // Gender
-      if (buttonId === "gender_male") {
-        session.gender = "Male";
-        await sendSummary(from, session);
-        await sendConfirmMenu(from);
-
-      } else if (buttonId === "gender_female") {
-        session.gender = "Female";
-        await sendSummary(from, session);
-        await sendConfirmMenu(from);
-
-      } else if (buttonId === "confirm_booking") {
-
-        const doctorName = getDoctorName(session.doctor);
-        const dateName = getDateName(session.date);
-        const timeName = getTimeName(session.time);
+else if(buttonId === "confirm_booking"){
 
 
-const { data: existingBooking } = await supabase
-  .from("appointments")
-  .select("id")
-  .eq("doctor", doctorName)
-  .eq("appointment_date", dateName)
-  .eq("appointment_time", timeName)
-  .maybeSingle();
+const doctorName =
+getDoctorName(session.doctor);
 
-if (existingBooking) {
-  await sendTextMessage(
-    from,
-    `❌ Sorry!
 
-This time slot is already booked.
+const dateName =
+getDateName(session.date);
+
+
+const timeName =
+getTimeName(session.time);
+
+
+
+// Check Slot
+
+const {
+data: existingBooking,
+error: checkError
+
+}= await supabase
+.from("appointments")
+.select("id")
+.eq("doctor",doctorName)
+.eq("appointment_date",dateName)
+.eq("appointment_time",timeName)
+.maybeSingle();
+
+
+
+if(checkError){
+
+console.log(checkError);
+
+await sendTextMessage(
+from,
+"❌ Unable to check slot. Please try again."
+);
+
+return;
+
+}
+
+
+
+if(existingBooking){
+
+
+await sendTextMessage(
+from,
+
+`❌ Slot Already Booked!
 
 🩺 Doctor: ${doctorName}
 📅 Date: ${dateName}
 🕒 Time: ${timeName}
 
-Please choose another date or time.`
-  );
+Please choose another slot.`
+);
 
-  return res.sendStatus(200);
+
+return;
+
 }
 
-const { data, error } = await supabase
-  .from("appointments")
-  .insert([
-    {
-      customer_name: session.name,
-      phone: from,
-      age: session.age,
-      gender: session.gender,
-      doctor: doctorName,
-      appointment_date: dateName,
-      appointment_time: timeName,
-      status: "Pending",
-    },
-  ])
-  .select()
-  .single();
+
+
+
+// Save Appointment
+
+
+const {
+
+data,
+error
+
+}=await supabase
+.from("appointments")
+.insert([
+
+{
+
+customer_name: session.name,
+
+phone: from,
+
+age: session.age,
+
+gender: session.gender,
+
+doctor: doctorName,
+
+appointment_date: dateName,
+
+appointment_time: timeName,
+
+status:"Pending"
+
+}
+
+])
+.select()
+.single();
+
+
+
+if(error){
+
+
+console.log(error);
+
+
+await sendTextMessage(
+from,
+"❌ Booking failed. Please try again."
+);
+
+
+return;
+
+}
+
+
+
+// Generate ID
+
+
+const appointmentId =
+generateAppointmentId(data.id);
 
 
 
 
-
-        if (error) {
-          console.log(error);
-        } else {
-          const appointmentId = generateAppointmentId(data.id);
+// Create PDF
 
 
-const pdfPath = await generateAppointmentSlip({
-  appointmentId,
-  name: session.name,
-  phone: `+${from}`,
-  doctor: doctorName,
-  date: dateName,
-  time: timeName,
+await generateAppointmentSlip({
+
+appointmentId,
+
+name:session.name,
+
+phone:`+${from}`,
+
+doctor:doctorName,
+
+date:dateName,
+
+time:timeName
+
 });
 
-console.log("PDF Created:", pdfPath);
 
 
 
+// Customer Message
 
 
+await sendTextMessage(
+from,
 
+`✅ Appointment Confirmed!
 
+🆔 ID: ${appointmentId}
 
-
-
-          await sendTextMessage(
-            from,
-`✅ Your appointment has been booked successfully!
-
-🆔 Appointment ID: ${appointmentId}
 👤 Name: ${session.name}
+
 📞 Phone: +${from}
+
 🩺 Doctor: ${doctorName}
+
 📅 Date: ${dateName}
+
 🕒 Time: ${timeName}
+
 
 Status: Pending
 
 Thank you for choosing our clinic.`
-          );
 
-
-
-await sendTextMessage(
-  process.env.ADMIN_PHONE,
-  `🔔 New Appointment Received!
-
-🆔 Appointment ID: ${appointmentId}
-
-👤 Name: ${session.name}
-📞 Phone: +${from}
-🩺 Doctor: ${doctorName}
-📅 Date: ${dateName}
-🕒 Time: ${timeName}
-
-Status: Pending`
 );
 
 
 
 
+// Admin Notification
 
-          console.log("Appointment Saved");
-          clearSession(from);
-        }
+
+if(process.env.ADMIN_PHONE){
+
+
+await sendTextMessage(
+
+process.env.ADMIN_PHONE,
+
+
+`🔔 New Appointment
+
+🆔 ${appointmentId}
+
+👤 ${session.name}
+
+📞 +${from}
+
+🩺 ${doctorName}
+
+📅 ${dateName}
+
+🕒 ${timeName}
+
+Status: Pending`
+
+);
+
+
+}
+
+
+
+
+clearSession(from);
+
+
+}
+
+
+
+// Cancel Booking
+
+
+else if(buttonId==="cancel_booking"){
+
+
+clearSession(from);
+
+
+await sendTextMessage(
+from,
+"❌ Appointment cancelled."
+);
+
+
+}
+
+
+
+// Reschedule
+
+
+else if(buttonId==="reschedule_booking"){
+
+
+clearSession(from);
+
+
+await sendTextMessage(
+from,
+"📅 Select doctor again for reschedule."
+);
+
+
+await sendDoctorMenu(from);
 
       } else if (buttonId === "cancel_booking") {
-        clearSession(from);
-
-
-
-} else if (buttonId === "reschedule_booking") {
         clearSession(from);
 
         await sendTextMessage(
           from,
-          "📅 Let's reschedule your appointment.\n\nPlease select a doctor again."
+          "❌ Your appointment has been cancelled."
         );
 
-        await sendDoctorMenu(from);
-
-      } else if (buttonId === "cancel_booking") {
-        clearSession(from);
         console.log("Appointment Cancelled");
       }
-
-
-
-
-
-
-
-
-
-
     }
 
-
-res.sendStatus(200);
+    return res.sendStatus(200);
 
   } catch (error) {
     console.error("Webhook Error:");
-    console.error(error.response?.data || error.message);
-    res.sendStatus(500);
+    console.error(error.response?.data || error.message || error);
+
+    return res.sendStatus(500);
   }
 });
 
