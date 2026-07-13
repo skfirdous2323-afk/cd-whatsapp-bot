@@ -67,10 +67,13 @@ app.post("/webhook", async (req, res) => {
 
     const from = message.from;
 
+const session = getSession(from);
+
+
+
     // TEXT MESSAGE
     if (message.type === "text") {
       const text = message.text.body.trim();
-      const session = getSession(from);
 
       if (
         text.toLowerCase() === "hi" ||
@@ -438,24 +441,6 @@ clearSession(from);
 
 }
 
-
-
-// Cancel Booking
-
-
-else if(buttonId==="cancel_booking"){
-
-
-clearSession(from);
-
-
-await sendTextMessage(
-from,
-"❌ Appointment cancelled."
-);
-
-
-}
 
 
 
