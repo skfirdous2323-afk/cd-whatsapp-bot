@@ -27,6 +27,12 @@ const app = express();
 
 app.use(express.json());
 
+
+
+
+
+
+
 // Home
 app.get("/", (req, res) => {
   res.send("✅ Clinic WhatsApp Bot Running");

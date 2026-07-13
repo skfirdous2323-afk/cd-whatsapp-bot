@@ -25,14 +25,21 @@ export async function sendConfirmMenu(phone) {
               type: "reply",
               reply: {
                 id: "confirm_booking",
-                title: "✅ Confirm"
+                title: "Confirm"
+              }
+            },
+            {
+              type: "reply",
+              reply: {
+                id: "reschedule_booking",
+                title: "Reschedule"
               }
             },
             {
               type: "reply",
               reply: {
                 id: "cancel_booking",
-                title: "❌ Cancel"
+                title: "Cancel"
               }
             }
           ]
