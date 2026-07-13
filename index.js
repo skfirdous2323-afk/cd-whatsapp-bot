@@ -184,8 +184,33 @@ Thank you for choosing our clinic.`
 
       } else if (buttonId === "cancel_booking") {
         clearSession(from);
+
+
+
+} else if (buttonId === "reschedule_booking") {
+        clearSession(from);
+
+        await sendTextMessage(
+          from,
+          "📅 Let's reschedule your appointment.\n\nPlease select a doctor again."
+        );
+
+        await sendDoctorMenu(from);
+
+      } else if (buttonId === "cancel_booking") {
+        clearSession(from);
         console.log("Appointment Cancelled");
       }
+
+
+
+
+
+
+
+
+
+
     }
 
 
