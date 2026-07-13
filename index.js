@@ -11,7 +11,7 @@ import { sendDateMenu } from "./menus/date.js";
 import { sendTimeMenu } from "./menus/time.js";
 import { sendConfirmMenu } from "./menus/confirm.js";
 import { sendSummary } from "./menus/summary.js";
-
+import { sendLocation } from "./menus/location.js";
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
 
@@ -101,6 +101,14 @@ app.post("/webhook", async (req, res) => {
         clearSession(from);
         await sendDoctorMenu(from);
       }
+
+
+else if (listId === "location") {
+  await sendLocation(from);
+}
+
+
+
 
       // Doctor
       else if (listId === "dr_rahul" || listId === "dr_priya") {
