@@ -16,7 +16,7 @@ import { sendConfirmMenu } from "./menus/confirm.js";
 import { sendSummary } from "./menus/summary.js";
 import { isClinicOpen } from "./utils/businessHours.js";
 
-
+import { sendMyAppointmentButtons } from "./menus/myAppointmentButtons.js";
 import { sendLocation } from "./menus/location.js";
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
@@ -210,6 +210,8 @@ else if (listId === "my_appointment") {
 📌 Status: ${data.status}`
   );
 
+  await sendMyAppointmentButtons(from);
+
 }
 
 else if (listId === "location") {
@@ -217,6 +219,10 @@ else if (listId === "location") {
   await sendLocation(from);
 
 }
+
+
+
+
 
 
 
@@ -539,36 +545,137 @@ clearSession(from);
 
 }
 
+else if (buttonId === "download_slip") {
+
+  const { data } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("phone", from)
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) {
+    await sendTextMessage(
+      from,
+      "❌ No appointment found."
+    );
+    return res.sendStatus(200);
+  }
+
+  const appointmentId = generateAppointmentId(data.id);
+
+  const pdfPath = await generateAppointmentSlip({
+    appointmentId,
+    name: data.customer_name,
+    phone: "+" + data.phone,
+    doctor: data.doctor,
+    date: data.appointment_date,
+    time: data.appointment_time,
+  });
+
+  await sendDocument(
+    from,
+    pdfPath,
+    `${appointmentId}.pdf`
+  );
+
+  await sendTextMessage(
+    from,
+    "📄 Your appointment slip has been sent."
+  );
+
+}
+
+
+
 
 
 
 // Reschedule
+// Reschedule
+else if (buttonId === "reschedule_booking") {
+
+  clearSession(from);
+
+  await sendTextMessage(
+    from,
+    "📅 Please select a doctor again to reschedule your appointment."
+  );
+
+  await sendDoctorMenu(from);
+
+}
+
+// Cancel Appointment
+else if (buttonId === "cancel_booking") {
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("id")
+    .eq("phone", from)
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.log(error);
+
+    await sendTextMessage(
+      from,
+      "❌ Unable to cancel appointment. Please try again."
+    );
+
+    return res.sendStatus(200);
+  }
+
+  if (!data) {
+    await sendTextMessage(
+      from,
+      "❌ No appointment found."
+    );
+
+    return res.sendStatus(200);
+  }
+
+  const { error: updateError } = await supabase
+    .from("appointments")
+    .update({
+      status: "Cancelled",
+    })
+    .eq("id", data.id);
+
+  if (updateError) {
+    console.log(updateError);
+
+    await sendTextMessage(
+      from,
+      "❌ Failed to cancel appointment."
+    );
+
+    return res.sendStatus(200);
+  }
+
+  clearSession(from);
+
+  await sendTextMessage(
+    from,
+`❌ Appointment Cancelled
+
+Your appointment has been cancelled successfully.
+
+Status: Cancelled
+
+Thank you for choosing SmileCare Dental Clinic.`
+  );
+
+  console.log("Appointment Cancelled");
+}
 
 
-else if(buttonId==="reschedule_booking"){
 
 
-clearSession(from);
 
-
-await sendTextMessage(
-from,
-"📅 Select doctor again for reschedule."
-);
-
-
-await sendDoctorMenu(from);
-
-      } else if (buttonId === "cancel_booking") {
-        clearSession(from);
-
-        await sendTextMessage(
-          from,
-          "❌ Your appointment has been cancelled."
-        );
-
-        console.log("Appointment Cancelled");
-      }
     }
 
     return res.sendStatus(200);
