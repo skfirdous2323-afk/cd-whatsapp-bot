@@ -1,6 +1,9 @@
 import express from "express";
 import "dotenv/config";
-
+import {
+  isProcessed,
+  markProcessed,
+} from "./processedMessages.js";
 import { askPatientAge } from "./menus/age.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
@@ -11,6 +14,9 @@ import { sendDateMenu } from "./menus/date.js";
 import { sendTimeMenu } from "./menus/time.js";
 import { sendConfirmMenu } from "./menus/confirm.js";
 import { sendSummary } from "./menus/summary.js";
+import { isClinicOpen } from "./utils/businessHours.js";
+
+
 import { sendLocation } from "./menus/location.js";
 import supabase from "./supabase.js";
 import { getSession, clearSession } from "./sessions.js";
@@ -20,7 +26,10 @@ import {
 } from "./services/whatsapp.js";
 
 
-
+import {
+  isValidName,
+  isValidAge,
+} from "./utils/validators.js";
 
 import {
   getDoctorName,
@@ -73,6 +82,20 @@ app.post("/webhook", async (req, res) => {
 
     const from = message.from;
 
+
+const messageId = message.id;
+
+if (isProcessed(messageId)) {
+  console.log("Duplicate message ignored:", messageId);
+  return res.sendStatus(200);
+}
+
+markProcessed(messageId);
+
+
+
+
+
 const session = getSession(from);
 
 
@@ -89,12 +112,43 @@ const session = getSession(from);
         await sendMainMenu(from);
 
       } else if (!session.name) {
-        session.name = text;
-        await askPatientAge(from);
+
+if (!isValidName(text)) {
+  await sendTextMessage(
+    from,
+    "❌ Please enter a valid name."
+  );
+  return res.sendStatus(200);
+}
+
+session.name = text;
+await askPatientAge(from);
+
+
+
+
+
+
+
+
 
       } else if (!session.age) {
-        session.age = text;
-        await askPatientGender(from);
+
+
+
+if (!isValidAge(text)) {
+  await sendTextMessage(
+    from,
+    "❌ Please enter a valid age (1-120)."
+  );
+  return res.sendStatus(200);
+}
+
+session.age = text;
+await askPatientGender(from);
+
+
+
       }
     }
 
@@ -115,13 +169,57 @@ message.interactive?.button_reply?.id;
 
 // Book Appointment
 
-if(listId === "book"){
+if (listId === "book") {
 
-clearSession(from);
+  clearSession(from);
 
-await sendDoctorMenu(from);
+  await sendDoctorMenu(from);
 
 }
+
+else if (listId === "my_appointment") {
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("phone", from)
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    await sendTextMessage(
+      from,
+      "❌ No appointment found."
+    );
+
+    return res.sendStatus(200);
+  }
+
+  const appointmentId = generateAppointmentId(data.id);
+
+  await sendTextMessage(
+    from,
+`📄 Your Latest Appointment
+
+🆔 ${appointmentId}
+👤 ${data.customer_name}
+🩺 ${data.doctor}
+📅 ${data.appointment_date}
+🕒 ${data.appointment_time}
+📌 Status: ${data.status}`
+  );
+
+}
+
+else if (listId === "location") {
+
+  await sendLocation(from);
+
+}
+
+
+
 
 
 // Location
@@ -234,7 +332,20 @@ getDateName(session.date);
 const timeName =
 getTimeName(session.time);
 
+if (!isClinicOpen()) {
+  await sendTextMessage(
+    from,
+`🏥 Clinic is currently closed.
 
+🕘 Working Hours:
+Monday - Saturday
+09:00 AM - 06:00 PM
+
+Please book during working hours.`
+  );
+
+  return res.sendStatus(200);
+}
 
 // Check Slot
 

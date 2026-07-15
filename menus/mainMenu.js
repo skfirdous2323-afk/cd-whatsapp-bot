@@ -29,7 +29,25 @@ export async function sendMainMenu(phone) {
                   id: "book",
                   title: "📅 Book Appointment"
                 },
+
+
+
+
+
+
+
+
+{
+  id: "my_appointment",
+  title: "📄 My Appointment",
+  description: "View your latest appointment"
+},
                 {
+
+
+
+
+
                   id: "doctors",
                   title: "👨‍⚕️ Doctors"
                 },
