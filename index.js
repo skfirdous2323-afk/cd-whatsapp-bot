@@ -7,6 +7,7 @@ import {
 import { askPatientAge } from "./menus/age.js";
 import { sendReminders } from "./services/reminder.js";
 import { getFAQ } from "./services/faq.js";
+import { sendContact } from "./menus/contact.js";
 import { sendDoctorsInfo } from "./menus/doctorsInfo.js";
 import { sendServices } from "./menus/services.js";
 import { askPatientGender } from "./menus/gender.js";
@@ -106,7 +107,43 @@ const session = getSession(from);
 
     // TEXT MESSAGE
     if (message.type === "text") {
-      const text = message.text.body.trim();
+ 
+     const text = message.text.body.trim();
+
+
+if (session.waitingForContact) {
+
+  session.waitingForContact = false;
+
+  await sendTextMessage(
+    from,
+`✅ Thank you!
+
+Your phone number has been received.
+
+📞 ${text}
+
+⏱️ Our support team will contact you within 20 minutes during clinic working hours.`
+  );
+
+  if (process.env.ADMIN_PHONE) {
+    await sendTextMessage(
+      process.env.ADMIN_PHONE,
+`📞 New Contact Request
+
+WhatsApp: +${from}
+
+Customer Phone: ${text}`
+    );
+  }
+
+  return res.sendStatus(200);
+}
+
+
+
+
+
 const faqReply = getFAQ(text);
 
 if (faqReply) {
@@ -256,6 +293,30 @@ else if(listId === "location"){
 await sendLocation(from);
 
 }
+
+
+// Contact Us
+
+else if (listId === "contact") {
+
+  session.waitingForContact = true;
+
+  await sendTextMessage(
+    from,
+`📞 Contact Support
+
+Please enter your phone number.
+
+Example:
+9876543210
+
+⏱️ Our support team will contact you within 20 minutes during clinic working hours.`
+  );
+
+}
+
+
+
 
 else if (listId === "services") {
 
