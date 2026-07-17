@@ -7,6 +7,7 @@ import {
 import { askPatientAge } from "./menus/age.js";
 import { sendReminders } from "./services/reminder.js";
 import { sendDoctorsInfo } from "./menus/doctorsInfo.js";
+import { sendServices } from "./menus/services.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
 import { generateAppointmentSlip } from "./pdf/appointmentSlip.js";
@@ -246,6 +247,11 @@ await sendLocation(from);
 
 }
 
+else if (listId === "services") {
+
+  await sendServices(from);
+
+}
 
 // Doctor Selection
 
