@@ -118,8 +118,7 @@ if (lowerText === "hi" || lowerText === "hello") {
 
   clearSession(from);
 
-  await sendMainMenu(from);
-
+await sendTimeMenu(from, session);
   return res.sendStatus(200);
 
 }
@@ -356,21 +355,6 @@ await sendDateMenu(from);
 
 
 // Date Selection
-
-else if(
-listId === "today" ||
-listId === "tomorrow" ||
-listId === "day_after"
-){
-
-session.date = listId;
-
-await sendTimeMenu(from);
-
-}
-
-
-// Time Selection
 else if (/^\d{4}-\d{2}-\d{2}$/.test(listId)) {
 
   session.date = listId;
@@ -382,19 +366,44 @@ else if (/^\d{4}-\d{2}-\d{2}$/.test(listId)) {
 
 
 
+// Time Selection
 
 
+// Time Selection
+else if (listId.startsWith("time_")) {
 
+  const timeSlots = [
+    "09:00 AM",
+    "09:30 AM",
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
+    "01:00 PM",
+    "01:30 PM",
+    "02:00 PM",
+    "02:30 PM",
+    "03:00 PM",
+    "03:30 PM",
+    "04:00 PM",
+    "04:30 PM",
+    "05:00 PM",
+    "05:30 PM"
+  ];
 
+  const index = Number(
+    listId.replace("time_", "")
+  );
 
+  session.time = timeSlots[index];
 
-
-
-
-
-await askPatientName(from);
+  await askPatientName(from);
 
 }
+
+
 
 
 
@@ -784,17 +793,21 @@ Status: Cancelled
 Thank you for choosing SmileCare Dental Clinic.`
   );
 
-  console.log("Appointment Cancelled");
+console.log("Appointment Cancelled"); 
 }
 
+}
+
+return res.sendStatus(200);
+
+} catch (error) {
 
 
 
 
 
-    return res.sendStatus(200);
 
-  } catch (error) {
+
     console.error("Webhook Error:");
     console.error(error.response?.data || error.message || error);
 
