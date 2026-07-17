@@ -111,7 +111,38 @@ const session = getSession(from);
      const text = message.text.body.trim();
 
 
+
+const lowerText = text.toLowerCase();
+
+if (lowerText === "hi" || lowerText === "hello") {
+
+  clearSession(from);
+
+  await sendMainMenu(from);
+
+  return res.sendStatus(200);
+
+}
+
+
+
+
 if (session.waitingForContact) {
+
+
+  if (!/^[6-9]\d{9}$/.test(text)) {
+    await sendTextMessage(
+      from,
+`❌ Invalid phone number.
+
+Please enter a valid 10-digit mobile number.
+
+Example:
+9876543210`
+    );
+
+    return res.sendStatus(200);
+  }
 
   session.waitingForContact = false;
 
@@ -126,22 +157,8 @@ Your phone number has been received.
 ⏱️ Our support team will contact you within 20 minutes during clinic working hours.`
   );
 
-  if (process.env.ADMIN_PHONE) {
-    await sendTextMessage(
-      process.env.ADMIN_PHONE,
-`📞 New Contact Request
-
-WhatsApp: +${from}
-
-Customer Phone: ${text}`
-    );
-  }
-
   return res.sendStatus(200);
 }
-
-
-
 
 
 const faqReply = getFAQ(text);
