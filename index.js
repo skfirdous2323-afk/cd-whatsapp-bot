@@ -371,15 +371,26 @@ await sendTimeMenu(from);
 
 
 // Time Selection
+else if (/^\d{4}-\d{2}-\d{2}$/.test(listId)) {
 
-else if(
-listId === "time_9" ||
-listId === "time_10" ||
-listId === "time_11" ||
-listId === "time_2"
-){
+  session.date = listId;
 
-session.time = listId;
+  await sendTimeMenu(from);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 await askPatientName(from);
 
@@ -780,7 +791,6 @@ Thank you for choosing SmileCare Dental Clinic.`
 
 
 
-    }
 
     return res.sendStatus(200);
 

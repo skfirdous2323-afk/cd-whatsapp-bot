@@ -1,6 +1,10 @@
 import axios from "axios";
+import { getNext10Days } from "../utils/dateOptions.js";
 
 export async function sendDateMenu(phone) {
+
+  const rows = getNext10Days();
+
   await axios.post(
     `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
     {
@@ -11,33 +15,20 @@ export async function sendDateMenu(phone) {
         type: "list",
         header: {
           type: "text",
-          text: "📅 Select Date"
+          text: "📅 Select Appointment Date"
         },
         body: {
-          text: "Please choose your appointment date."
+          text: "Please choose your preferred appointment date."
         },
         footer: {
-          text: "Clinic WhatsApp Bot"
+          text: "Next 10 Days Available"
         },
         action: {
           button: "Select Date",
           sections: [
             {
               title: "Available Dates",
-              rows: [
-                {
-                  id: "today",
-                  title: "Today"
-                },
-                {
-                  id: "tomorrow",
-                  title: "Tomorrow"
-                },
-                {
-                  id: "day_after",
-                  title: "Day After Tomorrow"
-                }
-              ]
+              rows
             }
           ]
         }
