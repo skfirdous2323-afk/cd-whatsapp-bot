@@ -10,11 +10,23 @@ export async function sendLocation(phone) {
       text: {
         body: `📍 SmileCare Dental Clinic
 
-🏥 Address:
-123 Main Road, Ilambazar, Birbhum
+🏥 Clinic Address
+Near Illambazar Bus Stand
+Illambazar
+Birbhum, West Bengal - 731214
 
-🗺️ Google Maps:
-https://maps.google.com/?q=23.6030,87.5380`
+🕘 Working Hours
+Monday - Saturday
+09:00 AM - 06:00 PM
+
+📞 Phone
++91 XXXXXXXXXX
+
+🗺️ Google Maps
+https://maps.google.com/?q=Illambazar+Bus+Stand+Birbhum
+
+🙏 We look forward to serving you.
+Have a great day! 😊`
       }
     },
     {
