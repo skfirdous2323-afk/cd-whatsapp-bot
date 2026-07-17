@@ -11,65 +11,62 @@ export async function sendMainMenu(phone) {
         type: "list",
         header: {
           type: "text",
-          text: "🏥 Welcome to SmileCare Clinic"
+          text: "🏥 SmileCare Dental Clinic",
         },
         body: {
-          text: "Please choose an option:"
+          text:
+            "Welcome!\n\nPlease choose an option from the menu below.",
         },
         footer: {
-          text: "Clinic WhatsApp Bot"
+          text: "Powered by SmileCare WhatsApp Bot",
         },
         action: {
-          button: "Menu",
+          button: "📋 Open Menu",
           sections: [
             {
-              title: "Main Menu",
+              title: "Patient Services",
               rows: [
                 {
                   id: "book",
-                  title: "📅 Book Appointment"
+                  title: "📅 Book Appointment",
+                  description: "Book a new appointment",
                 },
-
-
-
-
-
-
-
-
-{
-  id: "my_appointment",
-  title: "📄 My Appointment",
-  description: "View your latest appointment"
-},
                 {
-
-
-
-
-
-                  id: "doctors",
-                  title: "👨‍⚕️ Doctors"
+                  id: "my_appointment",
+                  title: "📄 My Appointment",
+                  description: "View your latest appointment",
+                },
+                {
+                  id: "doctors_info",
+                  title: "👨‍⚕️ Doctors",
+                  description: "Doctor profiles & consultation fee",
                 },
                 {
                   id: "services",
-                  title: "🩺 Services"
+                  title: "🩺 Services",
+                  description: "View all clinic services",
+                },
+                {
+                  id: "location",
+                  title: "📍 Clinic Location",
+                  description: "Find our clinic on Google Maps",
                 },
                 {
                   id: "contact",
-                  title: "📞 Contact Us"
-                }
-              ]
-            }
-          ]
-        }
-      }
+                  title: "📞 Contact Us",
+                  description: "Phone number & support",
+                },
+              ],
+            },
+          ],
+        },
+      },
     },
     {
       headers: {
         Authorization: `Bearer ${process.env.ACCESS_TOKEN}`,
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }
   );
 }

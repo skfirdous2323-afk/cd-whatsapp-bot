@@ -6,6 +6,7 @@ import {
 } from "./processedMessages.js";
 import { askPatientAge } from "./menus/age.js";
 import { sendReminders } from "./services/reminder.js";
+import { sendDoctorsInfo } from "./menus/doctorsInfo.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
 import { generateAppointmentSlip } from "./pdf/appointmentSlip.js";
@@ -226,7 +227,11 @@ else if (listId === "location") {
 }
 
 
+else if (listId === "doctors_info") {
 
+  await sendDoctorsInfo(from);
+
+}
 
 
 
