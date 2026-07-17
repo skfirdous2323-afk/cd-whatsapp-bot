@@ -5,6 +5,7 @@ import {
   markProcessed,
 } from "./processedMessages.js";
 import { askPatientAge } from "./menus/age.js";
+import { sendReminders } from "./services/reminder.js";
 import { askPatientGender } from "./menus/gender.js";
 import { askPatientName } from "./menus/name.js";
 import { generateAppointmentSlip } from "./pdf/appointmentSlip.js";
@@ -179,13 +180,17 @@ if (listId === "book") {
 
 else if (listId === "my_appointment") {
 
-  const { data, error } = await supabase
-    .from("appointments")
-    .select("*")
-    .eq("phone", from)
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+const { data, error } = await supabase
+  .from("appointments")
+  .select("*")
+  .eq("phone", from)
+  .neq("status", "Cancelled")
+  .order("id", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+
+
 
   if (error || !data) {
     await sendTextMessage(
@@ -689,6 +694,11 @@ Thank you for choosing SmileCare Dental Clinic.`
 });
 
 const PORT = process.env.PORT || 3000;
+
+// প্রতি ১ মিনিটে Reminder চেক করবে
+setInterval(async () => {
+  await sendReminders();
+}, 60000);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server Running on Port ${PORT}`);
