@@ -370,8 +370,7 @@ else if (/^\d{4}-\d{2}-\d{2}$/.test(listId)) {
 
 
 // Time Selection
-else if (listId.startsWith("time_")) {
-
+else if (listId && listId.startsWith("time_")) {
   const timeSlots = [
     "09:00 AM",
     "09:30 AM",

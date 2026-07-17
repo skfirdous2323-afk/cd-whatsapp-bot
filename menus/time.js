@@ -26,12 +26,13 @@ export async function sendTimeMenu(phone, session) {
   );
 
 
-  const rows = availableSlots.map((time, index) => ({
+const rows = availableSlots
+  .slice(0, 10)
+  .map((time, index) => ({
     id: `time_${index}`,
     title: time,
     description: "Available"
   }));
-
 
   await axios.post(
     `https://graph.facebook.com/v23.0/${process.env.PHONE_NUMBER_ID}/messages`,
