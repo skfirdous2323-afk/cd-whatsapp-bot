@@ -6,6 +6,7 @@ import {
 } from "./processedMessages.js";
 import { askPatientAge } from "./menus/age.js";
 import { sendReminders } from "./services/reminder.js";
+import { getFAQ } from "./services/faq.js";
 import { sendDoctorsInfo } from "./menus/doctorsInfo.js";
 import { sendServices } from "./menus/services.js";
 import { askPatientGender } from "./menus/gender.js";
@@ -106,6 +107,15 @@ const session = getSession(from);
     // TEXT MESSAGE
     if (message.type === "text") {
       const text = message.text.body.trim();
+const faqReply = getFAQ(text);
+
+if (faqReply) {
+  await sendTextMessage(from, faqReply);
+  return res.sendStatus(200);
+}
+
+
+
 
       if (
         text.toLowerCase() === "hi" ||
