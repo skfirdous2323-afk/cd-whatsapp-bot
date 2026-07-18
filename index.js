@@ -345,14 +345,15 @@ await sendDateMenu(from, session);
 
 
 // Date Selection
+// Date Selection
 else if (/^\d{4}-\d{2}-\d{2}$/.test(listId)) {
 
   session.date = listId;
 
-  await sendTimeMenu(from);
+  await sendTimeMenu(from, session);
 
+  return res.sendStatus(200);
 }
-
 
 
 
