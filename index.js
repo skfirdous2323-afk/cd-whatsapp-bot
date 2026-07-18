@@ -168,20 +168,34 @@ if (faqReply) {
 }
 
 
+if (!session.name) {
 
+  if (!isValidName(text)) {
+    await sendTextMessage(
+      from,
+      "❌ Please enter a valid name."
+    );
+    return res.sendStatus(200);
+  }
 
-      } else if (!session.name) {
+  session.name = text;
+  await askPatientAge(from);
 
-if (!isValidName(text)) {
-  await sendTextMessage(
-    from,
-    "❌ Please enter a valid name."
-  );
-  return res.sendStatus(200);
+} else if (!session.age) {
+
+  if (!isValidAge(text)) {
+    await sendTextMessage(
+      from,
+      "❌ Please enter a valid age (1-120)."
+    );
+    return res.sendStatus(200);
+  }
+
+  session.age = text;
+  await askPatientGender(from);
+
 }
 
-session.name = text;
-await askPatientAge(from);
 
 
 
@@ -191,24 +205,7 @@ await askPatientAge(from);
 
 
 
-      } else if (!session.age) {
 
-
-
-if (!isValidAge(text)) {
-  await sendTextMessage(
-    from,
-    "❌ Please enter a valid age (1-120)."
-  );
-  return res.sendStatus(200);
-}
-
-session.age = text;
-await askPatientGender(from);
-
-
-
-      }
     }
 
     // INTERACTIVE MESSAGE
