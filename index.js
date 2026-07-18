@@ -118,7 +118,7 @@ if (lowerText === "hi" || lowerText === "hello") {
 
   clearSession(from);
 
-await sendTimeMenu(from, session);
+await sendMainMenu(from);
   return res.sendStatus(200);
 
 }
@@ -339,7 +339,7 @@ listId === "dr_priya"
 
 session.doctor = listId;
 
-await sendDateMenu(from);
+await sendDateMenu(from, session);
 
 }
 
