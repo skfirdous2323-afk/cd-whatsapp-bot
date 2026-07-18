@@ -170,13 +170,6 @@ if (faqReply) {
 
 
 
-      if (
-        text.toLowerCase() === "hi" ||
-        text.toLowerCase() === "hello"
-      ) {
-        clearSession(from);
-        await sendMainMenu(from);
-
       } else if (!session.name) {
 
 if (!isValidName(text)) {
